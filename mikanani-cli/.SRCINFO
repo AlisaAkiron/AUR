@@ -1,0 +1,17 @@
+pkgbase = mikanani-cli
+	pkgdesc = An interactive CLI to download anime torrents from Mikan Project RSS feeds
+	pkgver = 0.4.1
+	pkgrel = 1
+	url = https://github.com/AlisaAkiron/mikanani-cli
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = cargo
+	depends = glibc
+	depends = libgcc
+	options = !lto
+	options = !debug
+	source = mikanani-cli-0.4.1.tar.gz::https://github.com/AlisaAkiron/mikanani-cli/archive/v0.4.1.tar.gz
+	sha256sums = 3f6fe812dbdf25d4af14ba833cad2049696ce605c07f03e28f720e65c05be3ba
+
+pkgname = mikanani-cli

@@ -1,0 +1,40 @@
+# Maintainer: Alisa <alisa@alisaqaq.moe>
+
+pkgname=mikanani-cli
+pkgver=0.4.1
+pkgrel=1
+pkgdesc="An interactive CLI to download anime torrents from Mikan Project RSS feeds"
+arch=('x86_64' 'aarch64')
+url="https://github.com/AlisaAkiron/mikanani-cli"
+license=('MIT')
+depends=('glibc' 'libgcc')
+makedepends=('cargo')
+options=('!lto' '!debug')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('3f6fe812dbdf25d4af14ba833cad2049696ce605c07f03e28f720e65c05be3ba')
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$(rustc --print host-tuple)"
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo test --frozen
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 target/release/mikan -t "$pkgdir/usr/bin/"
+  install -Dm644 README.md -t "$pkgdir/usr/share/doc/$pkgname/"
+  install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname/"
+}
