@@ -1,17 +1,21 @@
 # Maintainer: Alisa <alisa@alisaqaq.moe>
 
 pkgname=mikanani-cli
-pkgver=0.4.1
+pkgver=0.5.0
 pkgrel=1
 pkgdesc="An interactive CLI to download anime torrents from Mikan Project RSS feeds"
 arch=('x86_64' 'aarch64')
 url="https://github.com/AlisaAkiron/mikanani-cli"
 license=('MIT')
 depends=('glibc' 'libgcc')
+optdepends=(
+  'org.freedesktop.secrets: store qBittorrent passwords in the system keyring'
+  '1password-cli: read qBittorrent passwords from 1Password'
+)
 makedepends=('cargo')
 options=('!lto' '!debug')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('3f6fe812dbdf25d4af14ba833cad2049696ce605c07f03e28f720e65c05be3ba')
+sha256sums=('51bcc2d7e74ee045001030dfad5546d8a026ffb3d4d67ff9142c70c6350cb1c6')
 
 prepare() {
   cd "$pkgname-$pkgver"
