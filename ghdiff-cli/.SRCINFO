@@ -1,0 +1,17 @@
+pkgbase = ghdiff-cli
+	pkgdesc = Read a local git diff in the ghdiff review surface
+	pkgver = 0.1.0.r188.gd2f4029
+	pkgrel = 1
+	url = https://github.com/GalvinGao/ghdiff
+	arch = any
+	license = LicenseRef-unknown
+	makedepends = pnpm
+	depends = nodejs>=20.19
+	depends = git
+	optdepends = xdg-utils: open the review in a browser
+	options = !strip
+	options = !debug
+	source = ghdiff-d2f402961ebac5ba018a2ffba5926ab2307510a2.tar.gz::https://github.com/GalvinGao/ghdiff/archive/d2f402961ebac5ba018a2ffba5926ab2307510a2.tar.gz
+	sha256sums = bdd0c44f022bfddf6f41204b20a4efda4641c3bad875d5ece9f29e0c58044e8e
+
+pkgname = ghdiff-cli

@@ -4,6 +4,7 @@
 
 | Package | Version | Description | Arch | Upstream | Origin |
 | --- | --- | --- | --- | --- | --- |
+| [ghdiff-cli](ghdiff-cli/) | `0.1.0.r188.gd2f4029-1` | Read a local git diff in the ghdiff review surface | any | <https://github.com/GalvinGao/ghdiff> | Own |
 | [godot-launcher-bin](godot-launcher-bin/) | `1.13.0-2` | A streamlined, open-source tool designed to simplify and accelerate your Godot game development workflow. | aarch64, x86_64 | <https://godotlauncher.org/> | Modified from [AUR](https://aur.archlinux.org/packages/godot-launcher-bin), see [changes](godot-launcher-bin/README.md) |
 | [mikanani-cli](mikanani-cli/) | `0.5.0-1` | An interactive CLI to download anime torrents from Mikan Project RSS feeds | x86_64, aarch64 | <https://github.com/AlisaAkiron/mikanani-cli> | Own |
 | [raw-thumbnailer](raw-thumbnailer/) | `51.0.0-1` | A lightweight and fast raw image thumbnailer that can be used by file managers. | x86_64 | <https://gitlab.gnome.org/World/gnome-raw-thumbnailer/> | Modified from [AUR](https://aur.archlinux.org/packages/raw-thumbnailer), see [changes](raw-thumbnailer/README.md) |

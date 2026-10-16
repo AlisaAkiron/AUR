@@ -1,0 +1,41 @@
+# Maintainer: Alisa <alisa@alisaqaq.moe>
+
+pkgname=ghdiff-cli
+_pkgname=ghdiff
+pkgver=0.1.0.r188.gd2f4029
+_commit=d2f402961ebac5ba018a2ffba5926ab2307510a2
+pkgrel=1
+pkgdesc="Read a local git diff in the ghdiff review surface"
+arch=('any')
+url="https://github.com/GalvinGao/ghdiff"
+# Upstream ships no license file yet
+license=('LicenseRef-unknown')
+depends=('nodejs>=20.19' 'git')
+optdepends=('xdg-utils: open the review in a browser')
+makedepends=('pnpm')
+options=('!strip' '!debug')
+source=("$_pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz")
+sha256sums=('bdd0c44f022bfddf6f41204b20a4efda4641c3bad875d5ece9f29e0c58044e8e')
+
+prepare() {
+  cd "$_pkgname-$_commit"
+  export npm_config_manage_package_manager_versions=false
+  pnpm install --frozen-lockfile --store-dir "$srcdir/pnpm-store"
+}
+
+build() {
+  cd "$_pkgname-$_commit"
+  export npm_config_manage_package_manager_versions=false
+  pnpm build:cli
+}
+
+package() {
+  cd "$_pkgname-$_commit"
+  install -d "$pkgdir/usr/lib/$_pkgname" "$pkgdir/usr/bin"
+  cp -r --no-preserve=ownership dist/cli/bin dist/cli/web dist/cli/package.json \
+    "$pkgdir/usr/lib/$_pkgname/"
+  rm -f "$pkgdir/usr/lib/$_pkgname/bin/"*.map
+  chmod 755 "$pkgdir/usr/lib/$_pkgname/bin/ghdiff.js"
+  ln -s "/usr/lib/$_pkgname/bin/ghdiff.js" "$pkgdir/usr/bin/ghdiff"
+  install -Dm644 cli/README.md -t "$pkgdir/usr/share/doc/$pkgname/"
+}
