@@ -1,0 +1,24 @@
+pkgbase = skills-manager-cli-bin
+	pkgdesc = Command-line interface for Skills Manager, to manage AI agent skills across coding tools
+	pkgver = 1.42.0
+	pkgrel = 1
+	url = https://github.com/xingkongliang/skills-manager
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	depends = glibc
+	depends = libgcc
+	depends = xz
+	depends = zlib
+	provides = skills-manager-cli=1.42.0
+	conflicts = skills-manager-cli
+	options = !strip
+	options = !debug
+	source = LICENSE-1.42.0.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v1.42.0/LICENSE
+	sha256sums = 85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d
+	source_x86_64 = skills-manager-cli-1.42.0-x86_64::https://github.com/xingkongliang/skills-manager/releases/download/v1.42.0/skills-manager-cli-Linux-x64
+	sha256sums_x86_64 = 17b94fc78ab6888422146718786b4ed68b0563b9c7b981bb7a1385595a63d628
+	source_aarch64 = skills-manager-cli-1.42.0-aarch64::https://github.com/xingkongliang/skills-manager/releases/download/v1.42.0/skills-manager-cli-Linux-arm64
+	sha256sums_aarch64 = 286e8e3feeae473f8d5153a9712f98033b91b5e35855e50e9562dd7ceb10b847
+
+pkgname = skills-manager-cli-bin

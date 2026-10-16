@@ -22,6 +22,8 @@ pkg/
 *.jar
 *.whl
 LICENSE-*.txt
+# Downloaded binaries without an extension
+skills-manager-cli-bin/skills-manager-cli-*
 
 # Bare git clones that makepkg creates for VCS sources
 */*/HEAD

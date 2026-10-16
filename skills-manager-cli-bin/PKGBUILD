@@ -1,0 +1,25 @@
+# Maintainer: Alisa <alisa@alisaqaq.moe>
+
+pkgname=skills-manager-cli-bin
+_pkgname=skills-manager-cli
+pkgver=1.42.0
+pkgrel=1
+pkgdesc="Command-line interface for Skills Manager, to manage AI agent skills across coding tools"
+arch=('x86_64' 'aarch64')
+url="https://github.com/xingkongliang/skills-manager"
+license=('MIT')
+depends=('glibc' 'libgcc' 'xz' 'zlib')
+provides=("$_pkgname=$pkgver")
+conflicts=("$_pkgname")
+options=('!strip' '!debug')
+source=("LICENSE-$pkgver.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v$pkgver/LICENSE")
+source_x86_64=("$_pkgname-$pkgver-x86_64::$url/releases/download/v$pkgver/$_pkgname-Linux-x64")
+source_aarch64=("$_pkgname-$pkgver-aarch64::$url/releases/download/v$pkgver/$_pkgname-Linux-arm64")
+sha256sums=('85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d')
+sha256sums_x86_64=('17b94fc78ab6888422146718786b4ed68b0563b9c7b981bb7a1385595a63d628')
+sha256sums_aarch64=('286e8e3feeae473f8d5153a9712f98033b91b5e35855e50e9562dd7ceb10b847')
+
+package() {
+  install -Dm755 "$_pkgname-$pkgver-$CARCH" "$pkgdir/usr/bin/$_pkgname"
+  install -Dm644 "LICENSE-$pkgver.txt" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
