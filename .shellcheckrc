@@ -1,0 +1,6 @@
+# PKGBUILDs are sourced by makepkg, so many variables look unused or undefined
+# SC2034: variable appears unused (pkgname, depends, ...)
+# SC2154: variable referenced but not assigned (srcdir, pkgdir, ...)
+# SC2164: cd without || exit (makepkg runs with errexit)
+disable=SC2034,SC2154,SC2164
+shell=bash

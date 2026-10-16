@@ -1,0 +1,41 @@
+# makepkg build directories
+src/
+pkg/
+
+# Built and source packages
+*.pkg.tar
+*.pkg.tar.*
+*.src.tar.gz
+
+# Downloaded sources (local files like *.sh, *.patch, *.desktop stay tracked)
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+*.tgz
+*.zip
+*.7z
+*.rpm
+*.deb
+*.AppImage
+*.jar
+*.whl
+LICENSE-*.txt
+
+# Bare git clones that makepkg creates for VCS sources
+*/*/HEAD
+*/*/objects/
+*/*/refs/
+
+# makepkg / tooling logs
+*.log
+*.sig
+
+# Editor and OS cruft
+*~
+*.swp
+.*.swp
+.vscode/
+.idea/
+.DS_Store
