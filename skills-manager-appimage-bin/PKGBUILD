@@ -1,0 +1,72 @@
+# Maintainer: Alisa <alisa@alisaqaq.moe>
+
+pkgname=skills-manager-appimage-bin
+_pkgname=skills-manager
+pkgver=1.42.0
+pkgrel=1
+pkgdesc="A lightweight desktop app to manage, sync, and organize AI agent skills across coding tools (AppImage)"
+arch=('x86_64' 'aarch64')
+url="https://skillsmanager.dev"
+_ghurl="https://github.com/xingkongliang/skills-manager"
+license=('MIT')
+# The AppImage bundles GTK and WebKitGTK but leaves out the libraries on
+# linuxdeploy's excludelist; these are what its binaries load from the host.
+# The runtime mounts with any fusermount (fuse2 or fuse3) on PATH, and AppRun
+# is a bash script.
+depends=(
+  'bash'
+  'e2fsprogs'
+  'expat'
+  'fontconfig'
+  'freetype2'
+  'fribidi'
+  'fuse3'
+  'glibc'
+  'gmp'
+  'harfbuzz'
+  'hicolor-icon-theme'
+  'libdrm'
+  'libgcc'
+  'libglvnd'
+  'libgpg-error'
+  'libstdc++'
+  'libx11'
+  'libxcb'
+  'mesa'
+  'xz'
+  'zlib'
+)
+provides=("$_pkgname=$pkgver")
+conflicts=("$_pkgname")
+options=('!strip' '!debug')
+source=("LICENSE-$pkgver.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v$pkgver/LICENSE")
+source_x86_64=("$_pkgname-$pkgver-x86_64.AppImage::$_ghurl/releases/download/v$pkgver/${_pkgname}_${pkgver}_amd64.AppImage")
+source_aarch64=("$_pkgname-$pkgver-aarch64.AppImage::$_ghurl/releases/download/v$pkgver/${_pkgname}_${pkgver}_aarch64.AppImage")
+noextract=("$_pkgname-$pkgver-x86_64.AppImage" "$_pkgname-$pkgver-aarch64.AppImage")
+sha256sums=('85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d')
+sha256sums_x86_64=('e7d826d3c15a0a3bc3b19309d9743b80d425ea22d5429b1502a703f9412e826e')
+sha256sums_aarch64=('64abbcd32c1e748a451a0619b4c41fb761dbbc158dedacfe93084fedc98bbb65')
+
+prepare() {
+  chmod +x "$_pkgname-$pkgver-$CARCH.AppImage"
+  rm -rf squashfs-root
+  "./$_pkgname-$pkgver-$CARCH.AppImage" --appimage-extract 'usr/share/*' >/dev/null
+  # Upstream's entry has an empty Categories= and the binary name as Name=
+  sed -i \
+    -e 's/^Name=.*/Name=Skills Manager/' \
+    -e 's/^Categories=.*/Categories=Development;Utility;/' \
+    squashfs-root/usr/share/applications/$_pkgname.desktop
+}
+
+package() {
+  install -Dm755 "$_pkgname-$pkgver-$CARCH.AppImage" "$pkgdir/opt/$_pkgname/$_pkgname.AppImage"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s /opt/$_pkgname/$_pkgname.AppImage "$pkgdir/usr/bin/$_pkgname"
+  cd squashfs-root
+  install -Dm644 usr/share/applications/$_pkgname.desktop -t "$pkgdir/usr/share/applications/"
+  for _size in 32x32 128x128 256x256@2; do
+    install -Dm644 usr/share/icons/hicolor/$_size/apps/$_pkgname.png \
+      -t "$pkgdir/usr/share/icons/hicolor/$_size/apps/"
+  done
+  install -Dm644 "$srcdir/LICENSE-$pkgver.txt" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
