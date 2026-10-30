@@ -42,9 +42,14 @@ describe("renderPrompt", () => {
 });
 
 describe("childPipeline", () => {
-  test("no updates gives a valid noop job", () => {
-    const y = Bun.YAML.parse(childPipeline([])) as Record<string, unknown>;
+  test("no updates gives a valid noop job in one of our stages", async () => {
+    const y = Bun.YAML.parse(childPipeline([])) as Record<string, { stage?: string }>;
     expect(Object.keys(y)).toEqual(["noop"]);
+    // GitLab rejects the child pipeline if the stage isn't one of ours
+    const stages = (Bun.YAML.parse(await Bun.file(`${import.meta.dir}/../../.gitlab-ci.yml`).text()) as {
+      stages: string[];
+    }).stages;
+    expect(stages).toContain(y.noop!.stage!);
   });
   test("one job per update", () => {
     const y = Bun.YAML.parse(

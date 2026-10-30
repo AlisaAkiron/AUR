@@ -47,6 +47,8 @@ export function childPipeline(todo: Update[]): string {
   if (todo.length === 0) {
     return [
       "noop:",
+      // Stages here must exist in .gitlab-ci.yml (the default "test" doesn't)
+      "  stage: update",
       "  image: alpine:latest",
       "  rules:",
       '    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"',
