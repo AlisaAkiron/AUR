@@ -66,12 +66,22 @@ export async function checkoutBranch(
   return { oldSha, continued };
 }
 
-/** Commit the package directory as the bot, tagged with the upstream version. */
+/**
+ * Commit the package directory, plus any `extraPaths` (e.g. PACKAGES.md), as
+ * the bot, tagged with the upstream version.
+ */
 export async function commitUpdate(
-  o: { pkg: string; title: string; upstreamVersion: string; botName: string; botEmail: string },
+  o: {
+    pkg: string;
+    title: string;
+    upstreamVersion: string;
+    botName: string;
+    botEmail: string;
+    extraPaths?: string[];
+  },
   cwd: string,
 ): Promise<void> {
-  await $`git add -A -- ${o.pkg}`.cwd(cwd);
+  await $`git add -A -- ${o.pkg} ${o.extraPaths ?? []}`.cwd(cwd);
   await $`git -c ${`user.name=${o.botName}`} -c ${`user.email=${o.botEmail}`} commit -q -m ${o.title} -m ${`${VERSION_TRAILER}: ${o.upstreamVersion}`}`.cwd(
     cwd,
   );

@@ -177,6 +177,9 @@ if (buildOk) {
 }
 const srcinfo = await $`${AS_BUILDER} makepkg --printsrcinfo`.cwd(PKG_DIR).text();
 fs.writeFileSync(`${PKG_DIR}/.SRCINFO`, srcinfo);
+// PACKAGES.md is generated from every .SRCINFO. scripts/ is unchanged (the
+// outside-${PKG}/ check above passed), but run it as builder anyway.
+await $`${AS_BUILDER} scripts/gen-package-list.sh`;
 // Version as packaged (pkgver may differ from the upstream text), e.g. 1.2.3-1
 const fullVersion = srcinfoVersion(srcinfo) ?? NEWVER;
 // The same from the default branch, for the MR's update table
@@ -200,6 +203,7 @@ await commitUpdate(
     upstreamVersion: NEWVER,
     botName: env("BOT_NAME"),
     botEmail,
+    extraPaths: ["PACKAGES.md"],
   },
   REPO,
 );

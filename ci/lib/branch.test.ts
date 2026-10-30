@@ -51,7 +51,11 @@ async function updateJob(version: string) {
   const dir = await clone();
   const start = await checkoutBranch(BRANCH, BOT.botEmail, dir);
   writeFileSync(join(dir, "foo/PKGBUILD"), `pkgver=${version}\n`);
-  await commitUpdate({ pkg: "foo", title: `foo: ${version}-1`, upstreamVersion: version, ...BOT }, dir);
+  writeFileSync(join(dir, "PACKAGES.md"), `foo ${version}\n`);
+  await commitUpdate(
+    { pkg: "foo", title: `foo: ${version}-1`, upstreamVersion: version, extraPaths: ["PACKAGES.md"], ...BOT },
+    dir,
+  );
   await pushBranch(origin, BRANCH, start.oldSha, dir);
   return { dir, ...start };
 }
@@ -66,6 +70,7 @@ beforeEach(async () => {
   await $`git init -q -b main ${seed}`;
   await $`mkdir -p ${join(seed, "foo")}`;
   writeFileSync(join(seed, "foo/PKGBUILD"), "pkgver=1.0\n");
+  writeFileSync(join(seed, "PACKAGES.md"), "foo 1.0\n");
   await $`git add -A`.cwd(seed);
   await $`git -c user.name=Human -c user.email=human@example.com commit -q -m init`.cwd(seed);
   await $`git push -q ${origin} main`.cwd(seed);
@@ -139,6 +144,12 @@ describe("update job", () => {
 });
 
 describe("addGitExcludes", () => {
+  test("commits the extra paths with the package", async () => {
+    await updateJob("2.0");
+    const files = (await $`git show --name-only --format= ${`refs/heads/${BRANCH}`}`.cwd(origin).text()).trim();
+    expect(files.split("\n").sort()).toEqual(["PACKAGES.md", "foo/PKGBUILD"]);
+  });
+
   test("works in a clone without .git/info (like the GitLab runner's)", async () => {
     const dir = join(root, `bare-template-${n++}`);
     await $`git init -q --template= ${dir}`;
