@@ -1,0 +1,48 @@
+[__config__]
+oldver = "old_ver.json"
+newver = "new_ver.json"
+
+# No tags or releases upstream: mirror the PKGBUILD's pkgver scheme,
+# <cli/package.json version>.r<commit count>.g<short hash>
+[ghdiff-cli]
+source = "cmd"
+cmd = '''
+d=$(mktemp -d)
+trap 'rm -rf "$d"' EXIT
+git clone -q --bare --filter=blob:none https://github.com/GalvinGao/ghdiff "$d"
+cd "$d"
+printf '%s.r%s.g%s\n' \
+  "$(git show HEAD:cli/package.json | jq -r .version)" \
+  "$(git rev-list --count HEAD)" \
+  "$(git rev-parse --short=7 HEAD)"
+'''
+
+[godot-launcher-bin]
+source = "github"
+github = "godotlauncher/launcher"
+use_latest_release = true
+prefix = "v"
+
+[mikanani-cli]
+source = "github"
+github = "AlisaAkiron/mikanani-cli"
+use_latest_release = true
+prefix = "v"
+
+[raw-thumbnailer]
+source = "gitlab"
+host = "gitlab.gnome.org"
+gitlab = "World/gnome-raw-thumbnailer"
+use_max_tag = true
+
+[skills-manager-appimage-bin]
+source = "github"
+github = "xingkongliang/skills-manager"
+use_latest_release = true
+prefix = "v"
+
+[skills-manager-cli-bin]
+source = "github"
+github = "xingkongliang/skills-manager"
+use_latest_release = true
+prefix = "v"

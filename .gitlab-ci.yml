@@ -1,0 +1,169 @@
+# =============================================================================
+#  PKGBUILD auto-updater: nvchecker finds updates, an AI agent fixes & builds,
+#  results land as merge requests.
+#
+#  Pipeline layout
+#    check            (parent)  find outdated packages, generate child.yml
+#    trigger-updates  (parent)  start a child pipeline = this file + child.yml
+#    update:<pkg>     (child)   one job per outdated package, opens an MR
+#
+#  Required CI/CD variables (Settings -> CI/CD -> Variables, masked + protected):
+#    OPENROUTER_API_KEY OpenRouter API key (https://openrouter.ai/keys);
+#                       set a credit limit on the key as a cost backstop
+#    BOT_TOKEN          token with scopes api + write_repository and role
+#                       Developer: a personal access token of a dedicated bot
+#                       account (BOT_NAME / BOT_EMAIL below must match that
+#                       account's name and verified email), or a project
+#                       access token
+#    NEXUS_URL          base URL of the Nexus instance, e.g. http://nexus.example:8081
+#                       (kept out of the repo; masking hides it in job logs)
+#  Optional:
+#    AGENT_MODEL        overrides the AGENT_MODEL below without a commit
+#    GITHUB_TOKEN       GitHub token for nvchecker (avoids the 60 requests/hour
+#                       anonymous limit); masked, no scopes needed
+#    NVCHECKER_KEYFILE  File-type variable: a full nvchecker keyfile, for other
+#                       keys; can't be masked (multi-line). Wins over GITHUB_TOKEN
+#    OMP_MODELS_YML     File-type variable: an OMP models.yml, copied to
+#                       ~builder/.omp/agent/models.yml (custom / OpenAI-compatible
+#                       providers, e.g. OpenRouter or a model server on your LAN)
+#    OMP_CONFIG_YML     File-type variable: an OMP config.yml (model roles etc.)
+#
+#  Required in the repo:
+#    nvchecker.toml     [__config__]
+#                       oldver = "old_ver.json"
+#                       newver = "new_ver.json"
+#                       ...plus one entry per package, named like its directory
+#    <pkg>/PKGBUILD + <pkg>/.SRCINFO   (.SRCINFO is the source of current pkgver)
+#    ci/check.ts        parent job (find updates, generate child.yml)
+#    ci/update.ts       child job (agent, verify, MR)
+#    ci/lib/            shared helpers; `cd ci && bun install && bun test`
+#    ci/prompts.md      agent prompt ($PKG, $NEWVER, $REPO are substituted)
+#
+#  Run it from: Build -> Pipeline schedules (on a protected branch, e.g. main),
+#  or manually via Build -> Pipelines -> Run pipeline.
+#
+#  Runner side (not configurable here): Docker Hub mirror via Nexus goes in
+#  /etc/docker/daemon.json "registry-mirrors" on the runner host.
+# =============================================================================
+
+stages: [check, update]
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline" # the child pipeline
+    - when: never # no pipelines on push / MR
+
+default:
+  image: archlinux:base-devel
+  tags: [linux]
+  interruptible: true
+
+variables:
+  # ---- Local caches (Nexus; NEXUS_URL is a CI/CD variable) -------------------
+  # Nexus repository names (served at $NEXUS_URL/repository/<name>/)
+  NEXUS_ARCH_REPO: "archlinux" # raw proxy of an Arch mirror ($repo/os/$arch layout)
+  NEXUS_NPM_REPO: "npm-npmjs" # npm proxy of registry.npmjs.org
+  ARCH_MIRROR: "https://geo.mirror.pkgbuild.com" # fallback + repo DBs
+  NPM_REGISTRY: "$NEXUS_URL/repository/$NEXUS_NPM_REPO/"
+
+  # ---- Agent (OMP / oh-my-pi) -----------------------------------------------
+  # Bun comes from pacman (extra/bun) and runs the ci/*.ts scripts; OMP is
+  # installed with Bun into /usr/local so /usr/local/bin/omp is on PATH for
+  # the builder user. Pin once tested: @oh-my-pi/pi-coding-agent@x.y.z
+  OMP_PACKAGE: "@oh-my-pi/pi-coding-agent"
+  BUN_CONFIG_REGISTRY: "$NPM_REGISTRY" # bun installs through Nexus
+  # OpenRouter models: openrouter/<vendor>/<model>, using the model ID exactly as
+  # shown on openrouter.ai/models; append :high etc. for a thinking level.
+  # A CI/CD variable of the same name takes precedence over this value.
+  AGENT_MODEL: "openrouter/deepseek/deepseek-v4.1-flash-1017"
+  # USD per job, enforced by omp itself (decimals fine, e.g. 0.05); requests
+  # already in flight can finish past it
+  AGENT_MAX_COST: "0.1"
+  # --auto-approve: no one is there to answer tool prompts in CI
+  # --model and --max-cost are appended from the two variables above
+  AGENT_CMD: "omp -p --auto-approve --no-session --max-time 80m"
+  AGENT_ENV: "OPENROUTER_API_KEY" # comma-separated env vars the agent needs
+  AGENT_TIMEOUT: "90m" # hard kill, a little above --max-time
+  MAX_UPDATES: "1" # cap agent jobs per pipeline run
+
+  # ---- Merge requests -------------------------------------------------------
+  BOT_NAME: "pkgbuild-bot"
+  BOT_EMAIL: "pkgbuild-bot@git.alisaqaq.moe"
+  MR_LABELS: "pkg-update,bot"
+  # Full history: the aur/<pkg> branches are compared against the default branch
+  GIT_DEPTH: "0"
+
+# -----------------------------------------------------------------------------
+# Shared setup: pacman goes through Nexus (packages only, DBs from the mirror)
+# -----------------------------------------------------------------------------
+.arch:
+  before_script:
+    - |
+      set -euo pipefail
+      : "${NEXUS_URL:?set NEXUS_URL in Settings -> CI/CD -> Variables}"
+      cat > /etc/pacman.d/mirrorlist <<EOF
+      CacheServer = ${NEXUS_URL}/repository/${NEXUS_ARCH_REPO}/\$repo/os/\$arch
+      Server = ${ARCH_MIRROR}/\$repo/os/\$arch
+      EOF
+      pacman -Syu --noconfirm --needed $ARCH_PKGS
+      git config --global --add safe.directory '*'
+
+# -----------------------------------------------------------------------------
+# Parent: find outdated packages
+# -----------------------------------------------------------------------------
+check:
+  extends: .arch
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "parent_pipeline"
+  variables:
+    ARCH_PKGS: "git bun nvchecker"
+  script:
+    - bun ci/check.ts
+  artifacts:
+    expire_in: 1 week
+    paths: [child.yml, todo.json, old_ver.json, new_ver.json]
+
+trigger-updates:
+  stage: update
+  needs: [check]
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "parent_pipeline"
+  trigger:
+    include:
+      - local: .gitlab-ci.yml # brings in .update / .arch / variables
+      - artifact: child.yml
+        job: check
+    strategy: depend
+
+# -----------------------------------------------------------------------------
+# Child: one job per package (generated jobs extend this)
+# -----------------------------------------------------------------------------
+.update:
+  extends: .arch
+  stage: update
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+  timeout: 3h
+  variables:
+    ARCH_PKGS: "git bun sudo pacman-contrib namcap"
+    SRCDEST: "$CI_PROJECT_DIR/.srcdest"
+    GIT_STRATEGY: clone
+  cache:
+    key: "src-$PKG"
+    paths: [.srcdest/]
+  script:
+    - BUN_INSTALL=/usr/local bun install -g "$OMP_PACKAGE"
+    - bun ci/update.ts
+  after_script:
+    - chown -R root:root "$CI_PROJECT_DIR" || true
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - SUMMARY.md
+      - agent.log
+      - namcap.txt
+      - $PKG/*.log

@@ -41,3 +41,6 @@ skills-manager-cli-bin/skills-manager-cli-*
 .vscode/
 .idea/
 .DS_Store
+
+# CI tooling (ci/package.json dev dependencies)
+node_modules/
