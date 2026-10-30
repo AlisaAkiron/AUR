@@ -6,6 +6,8 @@ export interface Update {
   oldver: string;
   newver: string;
   branch: string;
+  /** Release page reported by nvchecker, if any. */
+  releaseUrl?: string;
 }
 
 /** One long-lived branch (and MR) per package, updated in place. */
@@ -63,6 +65,7 @@ export function childPipeline(todo: Update[]): string {
         `    PKG: ${q(u.name)}`,
         `    NEWVER: ${q(u.newver)}`,
         `    BRANCH: ${q(u.branch)}`,
+        ...(u.releaseUrl ? [`    RELEASE_URL: ${q(u.releaseUrl)}`] : []),
         "",
       ].join("\n"),
     )
@@ -96,9 +99,14 @@ export interface Outcome {
   buildOk: boolean;
 }
 
+/** First value of a pkgbase field (pkgver, url, ...) in .SRCINFO text. */
+export function srcinfoField(srcinfo: string, key: string): string | undefined {
+  return srcinfo.match(new RegExp(`^\\t${key} = (.+)$`, "m"))?.[1];
+}
+
 /** Full package version ([epoch:]pkgver-pkgrel) from .SRCINFO text. */
 export function srcinfoVersion(srcinfo: string): string | undefined {
-  const field = (key: string) => srcinfo.match(new RegExp(`^\\t${key} = (.+)$`, "m"))?.[1];
+  const field = (key: string) => srcinfoField(srcinfo, key);
   const [epoch, pkgver, pkgrel] = [field("epoch"), field("pkgver"), field("pkgrel")];
   if (!pkgver || !pkgrel) return undefined;
   return `${epoch ? `${epoch}:` : ""}${pkgver}-${pkgrel}`;
@@ -118,26 +126,110 @@ export function mrTitle(pkg: string, fullVersion: string, o: Outcome): string {
 
 const bullets = (items: string[]) => items.map((i) => `- ${i}`).join("\n");
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** namcap output for the MR: errors visible, warnings folded away. */
+export function namcapSection(output: string): string | undefined {
+  const lines = output.split("\n").filter((l) => l.trim());
+  if (!lines.length) return undefined;
+  const errors = lines.filter((l) => /\sE: /.test(l));
+  const rest = lines.filter((l) => !/\sE: /.test(l));
+  const block = (ls: string[]) => `\`\`\`\n${ls.join("\n")}\n\`\`\``;
+  const parts = [`**namcap:** ${plural(errors.length, "error")}, ${plural(rest.length, "warning")}`];
+  if (errors.length) parts.push(block(errors));
+  if (rest.length) {
+    // Blank lines around the code block so GitLab renders markdown inside <details>
+    parts.push(`<details><summary>${plural(rest.length, "warning")}</summary>\n\n${block(rest)}\n\n</details>`);
+  }
+  return parts.join("\n\n");
+}
+
+/**
+ * Renovate-style update type from two pkgvers: which dot-separated part
+ * changed first (major / minor / patch). Anything that doesn't line up as
+ * numbers (VCS versions like 0.1.0.r188.gd2f4029 -> ...r190...) is "update".
+ */
+export function updateType(oldVer: string | undefined, newVer: string): string {
+  if (!oldVer) return "update";
+  const parts = (v: string) => v.split(".");
+  const [a, b] = [parts(oldVer), parts(newVer)];
+  const numeric = (p: string[]) => p.slice(0, 3).every((x) => /^\d+$/.test(x));
+  if (!numeric(a) || !numeric(b)) return "update";
+  const names = ["major", "minor", "patch"];
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] ?? "0") !== (b[i] ?? "0")) return names[i]!;
+  }
+  return a.join(".") === b.join(".") ? "rebuild" : "patch";
+}
+
+/** Push the agent's headings below ours (its "# Title" becomes "#### Title"). */
+function demoteHeadings(markdown: string): string {
+  return markdown.replace(/^(#{1,6}) /gm, (_, h: string) => `${"#".repeat(Math.min(h.length + 3, 6))} `);
+}
+
+export interface PackageChange {
+  pkg: string;
+  /** Upstream project URL (PKGBUILD url=). */
+  homepage?: string;
+  /** pkgver before / after, for the update type. */
+  oldPkgver?: string;
+  newPkgver: string;
+  /** Full versions ([epoch:]pkgver-pkgrel) before / after. */
+  oldVersion?: string;
+  newVersion: string;
+  /** Release page reported by nvchecker. */
+  releaseUrl?: string;
+}
+
 export function mrDescription(
   o: Outcome & {
+    change: PackageChange;
     summary: string;
     notes: string[];
     namcap: string;
     agentExitCode: number;
+    cost: number;
     jobUrl: string;
   },
 ): string {
-  const parts = [o.summary.trim(), "---"];
+  const c = o.change;
+  const name = c.homepage ? `[${c.pkg}](${c.homepage})` : c.pkg;
+  const from = c.oldVersion ? `\`${c.oldVersion}\` → ` : "";
+  const parts = [
+    "This MR contains the following updates:",
+    [
+      "| Package | Update | Change |",
+      "|---|---|---|",
+      `| ${name} | ${updateType(c.oldPkgver, c.newPkgver)} | ${from}\`${c.newVersion}\` |`,
+    ].join("\n"),
+  ];
+  if (c.releaseUrl) parts.push(`📝 [Release notes](${c.releaseUrl})`);
+
+  // Folded; blank lines around it so GitLab renders the markdown inside <details>
+  parts.push(
+    "---",
+    `<details><summary><b>Agent summary</b></summary>\n\n${demoteHeadings(o.summary.trim())}\n\n</details>`,
+  );
+
+  parts.push("---", "### CI verification");
   if (o.violations.length) {
-    parts.push(`**Guard rail violations (do not merge as-is):**\n${bullets(o.violations)}`);
+    parts.push(`⚠️ **Guard rail violations (do not merge as-is):**\n${bullets(o.violations)}`);
   }
   if (o.notes.length) parts.push(`**CI notes:**\n${bullets(o.notes)}`);
   if (o.buildOk) {
-    parts.push("**Build:** passed (verified by CI after the agent finished)");
-    if (o.namcap.trim()) parts.push(`**namcap:**\n\`\`\`\n${o.namcap.trim()}\n\`\`\``);
+    parts.push("✅ **Build passed** (verified by CI after the agent finished)");
+    const namcap = namcapSection(o.namcap);
+    if (namcap) parts.push(namcap);
   } else {
-    parts.push("**Build:** FAILED in CI verification");
+    parts.push("❌ **Build FAILED** in CI verification");
   }
-  parts.push(`Agent exit code: ${o.agentExitCode}  \nJob: ${o.jobUrl}`);
+
+  const cost = o.cost ? ` · cost $${o.cost.toFixed(4)}` : "";
+  parts.push(
+    "---",
+    `🤖 Created by the PKGBUILD updater · [job](${o.jobUrl}) · agent exit code ${o.agentExitCode}${cost}  \n` +
+      "Newer upstream versions update this MR in place. Pushing your own commits to the branch is fine: " +
+      "the next update continues on top of them.",
+  );
   return parts.join("\n\n") + "\n";
 }

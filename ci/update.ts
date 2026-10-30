@@ -14,6 +14,7 @@ import {
   mrTitle,
   pkgbuildViolations,
   renderPrompt,
+  srcinfoField,
   srcinfoVersion,
 } from "./lib/core";
 import { addGitExcludes, checkoutBranch, commitUpdate, pushBranch } from "./lib/branch";
@@ -178,6 +179,11 @@ const srcinfo = await $`${AS_BUILDER} makepkg --printsrcinfo`.cwd(PKG_DIR).text(
 fs.writeFileSync(`${PKG_DIR}/.SRCINFO`, srcinfo);
 // Version as packaged (pkgver may differ from the upstream text), e.g. 1.2.3-1
 const fullVersion = srcinfoVersion(srcinfo) ?? NEWVER;
+// The same from the default branch, for the MR's update table
+const oldSrcinfo = await $`git show ${`${env("CI_COMMIT_SHA")}:${PKG}/.SRCINFO`}`
+  .quiet()
+  .nothrow()
+  .text();
 
 // ---- Commit, push --------------------------------------------------------------
 const summaryFile = `${REPO}/SUMMARY.md`;
@@ -206,6 +212,16 @@ const outcome = { violations, buildOk };
 const title = mrTitle(PKG, fullVersion, outcome);
 const description = mrDescription({
   ...outcome,
+  change: {
+    pkg: PKG,
+    homepage: srcinfoField(srcinfo, "url"),
+    oldPkgver: srcinfoField(oldSrcinfo, "pkgver"),
+    newPkgver: srcinfoField(srcinfo, "pkgver") ?? NEWVER,
+    oldVersion: srcinfoVersion(oldSrcinfo),
+    newVersion: fullVersion,
+    releaseUrl: process.env.RELEASE_URL || undefined,
+  },
+  cost: agent.cost,
   summary: redact(fs.readFileSync(summaryFile, "utf8")),
   notes,
   namcap: redact(namcap),

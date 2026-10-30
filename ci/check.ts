@@ -46,6 +46,14 @@ try {
 const outdated: { name: string; oldver?: string | null; newver?: string | null }[] =
   await $`nvcmp -c nvchecker.toml --json`.json();
 
+// Release pages nvchecker found (GitHub releases, GitLab tags, ...), for the MR
+const newVer = JSON.parse(readFileSync("new_ver.json", "utf8")) as {
+  data: Record<string, { url?: string | null }>;
+};
+const releaseUrls: Record<string, string | undefined> = Object.fromEntries(
+  Object.entries(newVer.data).map(([name, entry]) => [name, entry.url ?? undefined]),
+);
+
 // 3. Skip packages whose aur/<pkg> branch already targets this version
 //    (open MR, or a failed draft that shouldn't be retried every run), cap count
 await fetchAurBranches(".");
@@ -58,7 +66,7 @@ for (const u of outdated) {
     console.log(`  ${u.name}: ${branch} already targets ${u.newver}, skipping`);
     continue;
   }
-  todo.push({ name: u.name, oldver: u.oldver, newver: u.newver, branch });
+  todo.push({ name: u.name, oldver: u.oldver, newver: u.newver, branch, releaseUrl: releaseUrls[u.name] });
   if (todo.length >= maxUpdates) break;
 }
 writeJson("todo.json", todo);
