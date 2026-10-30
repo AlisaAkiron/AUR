@@ -2,7 +2,7 @@
 
 pkgname=skills-manager-cli-bin
 _pkgname=skills-manager-cli
-pkgver=1.42.0
+pkgver=1.43.1
 pkgrel=1
 pkgdesc="Command-line interface for Skills Manager, to manage AI agent skills across coding tools"
 arch=('x86_64' 'aarch64')
@@ -16,8 +16,8 @@ source=("LICENSE-$pkgver.txt::https://raw.githubusercontent.com/xingkongliang/sk
 source_x86_64=("$_pkgname-$pkgver-x86_64::$url/releases/download/v$pkgver/$_pkgname-Linux-x64")
 source_aarch64=("$_pkgname-$pkgver-aarch64::$url/releases/download/v$pkgver/$_pkgname-Linux-arm64")
 sha256sums=('85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d')
-sha256sums_x86_64=('17b94fc78ab6888422146718786b4ed68b0563b9c7b981bb7a1385595a63d628')
-sha256sums_aarch64=('286e8e3feeae473f8d5153a9712f98033b91b5e35855e50e9562dd7ceb10b847')
+sha256sums_x86_64=('f78936d41ef7865090b29dedace84b43d8fe229a366d611bbc5f7136b3f15171')
+sha256sums_aarch64=('26215d9494851165ffbaba8bc01d70f59859ae93eaa2cee7b2567736d9937177')
 
 package() {
   install -Dm755 "$_pkgname-$pkgver-$CARCH" "$pkgdir/usr/bin/$_pkgname"
