@@ -6,14 +6,19 @@ export interface MergeRequest {
 }
 
 export class GitLab {
-  private readonly base: string;
+  /** Project-scoped path prefix; request() paths are relative to the API root. */
+  private readonly project: string;
 
-  constructor(apiUrl: string, projectId: string, private readonly token: string) {
-    this.base = `${apiUrl}/projects/${encodeURIComponent(projectId)}`;
+  constructor(
+    private readonly apiUrl: string,
+    projectId: string,
+    private readonly token: string,
+  ) {
+    this.project = `/projects/${encodeURIComponent(projectId)}`;
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const res = await fetch(this.base + path, {
+    const res = await fetch(this.apiUrl + path, {
       method,
       headers: {
         "PRIVATE-TOKEN": this.token,
@@ -30,8 +35,15 @@ export class GitLab {
   /** The open MR whose source is `branch`, if any. */
   async openMergeRequestFor(branch: string): Promise<MergeRequest | undefined> {
     const q = new URLSearchParams({ state: "opened", source_branch: branch });
-    const mrs = await this.request<MergeRequest[]>("GET", `/merge_requests?${q}`);
+    const mrs = await this.request<MergeRequest[]>("GET", `${this.project}/merge_requests?${q}`);
     return mrs[0];
+  }
+
+  /** User id for a username, if the user exists. */
+  async userId(username: string): Promise<number | undefined> {
+    const q = new URLSearchParams({ username });
+    const users = await this.request<{ id: number }[]>("GET", `/users?${q}`);
+    return users[0]?.id;
   }
 
   createMergeRequest(mr: {
@@ -41,8 +53,9 @@ export class GitLab {
     description: string;
     labels: string;
     remove_source_branch: boolean;
+    assignee_ids?: number[];
   }): Promise<MergeRequest> {
-    return this.request("POST", "/merge_requests", mr);
+    return this.request("POST", `${this.project}/merge_requests`, mr);
   }
 
   /** `add_labels` keeps labels someone added by hand. */
@@ -50,10 +63,10 @@ export class GitLab {
     iid: number,
     changes: { title: string; description: string; add_labels: string },
   ): Promise<MergeRequest> {
-    return this.request("PUT", `/merge_requests/${iid}`, changes);
+    return this.request("PUT", `${this.project}/merge_requests/${iid}`, changes);
   }
 
   async comment(iid: number, body: string): Promise<void> {
-    await this.request("POST", `/merge_requests/${iid}/notes`, { body });
+    await this.request("POST", `${this.project}/merge_requests/${iid}/notes`, { body });
   }
 }

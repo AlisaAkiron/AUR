@@ -90,12 +90,13 @@ variables:
   AGENT_CMD: "omp -p --auto-approve --no-session --max-time 80m --tools read,bash,edit,write,grep,glob,todo,wait,web_search"
   AGENT_ENV: "OPENROUTER_API_KEY" # comma-separated env vars the agent needs
   AGENT_TIMEOUT: "90m" # hard kill, a little above --max-time
-  MAX_UPDATES: "1" # cap agent jobs per pipeline run
+  MAX_UPDATES: "10" # cap agent jobs per pipeline run
 
   # ---- Merge requests -------------------------------------------------------
   BOT_NAME: "pkgbuild-bot"
   BOT_EMAIL: "pkgbuild-bot@git.alisaqaq.moe"
   MR_LABELS: "pkg-update,bot"
+  MR_ASSIGNEE: "alisa" # username new MRs are assigned to; empty = nobody
   # Full history: the aur/<pkg> branches are compared against the default branch
   GIT_DEPTH: "0"
 

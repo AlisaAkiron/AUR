@@ -224,6 +224,16 @@ if (existing) {
     .catch((e) => warn(`could not comment on !${existing.iid}: ${e}`));
   console.log(`Updated MR: ${existing.web_url}`);
 } else {
+  // Assign new MRs only; an existing MR keeps whatever assignees it has now
+  const assignee = process.env.MR_ASSIGNEE?.trim();
+  let assigneeId: number | undefined;
+  if (assignee) {
+    assigneeId = await gitlab.userId(assignee).catch((e) => {
+      warn(`could not look up MR_ASSIGNEE ${assignee}: ${e}`);
+      return undefined;
+    });
+    if (assigneeId === undefined) warn(`MR_ASSIGNEE ${assignee} not found; leaving the MR unassigned`);
+  }
   const mr = await gitlab.createMergeRequest({
     source_branch: BRANCH,
     target_branch: env("CI_DEFAULT_BRANCH"),
@@ -231,6 +241,7 @@ if (existing) {
     description,
     labels: env("MR_LABELS"),
     remove_source_branch: true,
+    ...(assigneeId === undefined ? {} : { assignee_ids: [assigneeId] }),
   });
   console.log(`Opened MR: ${mr.web_url}`);
 }
