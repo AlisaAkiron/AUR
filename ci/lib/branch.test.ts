@@ -3,10 +3,17 @@
 
 import { $ } from "bun";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { branchVersion, checkoutBranch, commitUpdate, fetchAurBranches, pushBranch } from "./branch";
+import {
+  addGitExcludes,
+  branchVersion,
+  checkoutBranch,
+  commitUpdate,
+  fetchAurBranches,
+  pushBranch,
+} from "./branch";
 
 process.env.GIT_CONFIG_GLOBAL = "/dev/null";
 process.env.GIT_CONFIG_NOSYSTEM = "1";
@@ -128,6 +135,19 @@ describe("update job", () => {
       "human@example.com:readme",
       "human@example.com:init",
     ]);
+  });
+});
+
+describe("addGitExcludes", () => {
+  test("works in a clone without .git/info (like the GitLab runner's)", async () => {
+    const dir = join(root, `bare-template-${n++}`);
+    await $`git init -q --template= ${dir}`;
+    expect(existsSync(join(dir, ".git/info"))).toBe(false);
+    await addGitExcludes(["src/", "*.log"], dir);
+    await addGitExcludes(["/SUMMARY.md"], dir);
+    expect(readFileSync(join(dir, ".git/info/exclude"), "utf8")).toBe("src/\n*.log\n/SUMMARY.md\n");
+    writeFileSync(join(dir, "x.log"), "");
+    expect((await $`git status --porcelain`.cwd(dir).text()).trim()).toBe("");
   });
 });
 

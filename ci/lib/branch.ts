@@ -1,9 +1,21 @@
 // Git side of the long-lived aur/<pkg> branches. Covered by branch.test.ts.
 
 import { $ } from "bun";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { VERSION_TRAILER, versionFromLog } from "./core";
 
 const remoteRef = (branch: string) => `refs/remotes/origin/${branch}`;
+
+/**
+ * Ignore build leftovers locally (.git/info/exclude). The runner's clone has
+ * no .git/info/ (no git templates), so create it.
+ */
+export async function addGitExcludes(patterns: string[], cwd: string): Promise<void> {
+  const file = resolve(cwd, (await $`git rev-parse --git-path info/exclude`.cwd(cwd).text()).trim());
+  mkdirSync(dirname(file), { recursive: true });
+  appendFileSync(file, patterns.map((p) => `${p}\n`).join(""));
+}
 
 /** Fetch every aur/* branch from origin (check job). */
 export async function fetchAurBranches(cwd: string): Promise<void> {

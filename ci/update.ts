@@ -16,7 +16,7 @@ import {
   renderPrompt,
   srcinfoVersion,
 } from "./lib/core";
-import { checkoutBranch, commitUpdate, pushBranch } from "./lib/branch";
+import { addGitExcludes, checkoutBranch, commitUpdate, pushBranch } from "./lib/branch";
 import { GitLab } from "./lib/gitlab";
 import { env, fail, runTee, warn } from "./lib/proc";
 
@@ -51,10 +51,7 @@ for (const [variable, file] of [
 }
 await $`chown -R builder: /home/builder/.omp`;
 fs.mkdirSync(env("SRCDEST"), { recursive: true });
-fs.appendFileSync(
-  ".git/info/exclude",
-  ["src/", "pkg/", "*.pkg.tar.*", "*.log", "/SUMMARY.md", "/.srcdest/", ""].join("\n"),
-);
+await addGitExcludes(["src/", "pkg/", "*.pkg.tar.*", "*.log", "/SUMMARY.md", "/.srcdest/"], REPO);
 
 // Read the prompt from this pipeline's commit, before checking anything else out
 const prompt = renderPrompt(fs.readFileSync("ci/prompts.md", "utf8"), {
