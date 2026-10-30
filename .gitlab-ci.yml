@@ -64,7 +64,7 @@ default:
 variables:
   # ---- Local caches (Nexus; NEXUS_URL is a CI/CD variable) -------------------
   # Nexus repository names (served at $NEXUS_URL/repository/<name>/)
-  NEXUS_ARCH_REPO: "archlinux" # raw proxy of an Arch mirror ($repo/os/$arch layout)
+  NEXUS_ARCH_REPO: "raw-archlinux" # raw proxy of an Arch mirror ($repo/os/$arch layout)
   NEXUS_NPM_REPO: "npm-npmjs" # npm proxy of registry.npmjs.org
   ARCH_MIRROR: "https://geo.mirror.pkgbuild.com" # fallback + repo DBs
   NPM_REGISTRY: "$NEXUS_URL/repository/$NEXUS_NPM_REPO/"
