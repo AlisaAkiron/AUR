@@ -18,7 +18,8 @@ import {
 } from "./lib/core";
 import { addGitExcludes, checkoutBranch, commitUpdate, pushBranch } from "./lib/branch";
 import { GitLab } from "./lib/gitlab";
-import { env, fail, runTee, warn } from "./lib/proc";
+import { createRedactor } from "./lib/agentlog";
+import { env, fail, runAgent, warn } from "./lib/proc";
 
 const PKG = env("PKG");
 const NEWVER = env("NEWVER");
@@ -35,20 +36,25 @@ const git = {
 // ---- Agent + unprivileged build user -----------------------------------------
 if (!Bun.which("omp")) fail("omp not on PATH after install");
 if ((await $`id builder`.quiet().nothrow()).exitCode !== 0) await $`useradd -m builder`;
-fs.writeFileSync("/etc/sudoers.d/builder", "builder ALL=(ALL) NOPASSWD: /usr/bin/pacman\n", {
-  mode: 0o440,
-});
+// sudo drops the proxy variables by default; keep them so the agent and
+// makepkg (running as builder) use the same network path as root
+const PROXY_ENV = ["http_proxy", "https_proxy", "ftp_proxy", "all_proxy", "no_proxy"];
+fs.writeFileSync(
+  "/etc/sudoers.d/builder",
+  [
+    "builder ALL=(ALL) NOPASSWD: /usr/bin/pacman",
+    `Defaults env_keep += "${[...PROXY_ENV, ...PROXY_ENV.map((v) => v.toUpperCase())].join(" ")}"`,
+    "",
+  ].join("\n"),
+  { mode: 0o440 },
+);
 
-// Optional OMP provider/model config (file-type CI variables)
+// OMP config: ci/omp-config.yml (command restrictions), unless replaced by the
+// OMP_CONFIG_YML file variable; optional OMP_MODELS_YML for custom providers
 const ompDir = "/home/builder/.omp/agent";
 fs.mkdirSync(ompDir, { recursive: true });
-for (const [variable, file] of [
-  ["OMP_MODELS_YML", "models.yml"],
-  ["OMP_CONFIG_YML", "config.yml"],
-] as const) {
-  const src = process.env[variable];
-  if (src) fs.copyFileSync(src, `${ompDir}/${file}`);
-}
+fs.copyFileSync(process.env.OMP_CONFIG_YML || "ci/omp-config.yml", `${ompDir}/config.yml`);
+if (process.env.OMP_MODELS_YML) fs.copyFileSync(process.env.OMP_MODELS_YML, `${ompDir}/models.yml`);
 await $`chown -R builder: /home/builder/.omp`;
 fs.mkdirSync(env("SRCDEST"), { recursive: true });
 await addGitExcludes(["src/", "pkg/", "*.pkg.tar.*", "*.log", "/SUMMARY.md", "/.srcdest/"], REPO);
@@ -95,22 +101,43 @@ const startHead = await git.head();
 
 // ---- Run the agent -----------------------------------------------------------
 const preserveEnv = [env("AGENT_ENV"), "SRCDEST", "PKG", "NEWVER", "CI_PROJECT_DIR"].join(",");
-const agentExitCode = await runTee(
+// Job logs and artifacts are public: redact every secret the agent could see
+// or print (GitLab only masks job logs, not artifacts or MR descriptions)
+const redact = createRedactor(
+  [
+    ...env("AGENT_ENV").split(","),
+    "BOT_TOKEN",
+    "GITHUB_TOKEN",
+    "NEXUS_URL",
+    "CI_JOB_TOKEN",
+    ...PROXY_ENV,
+    ...PROXY_ENV.map((v) => v.toUpperCase()),
+  ]
+    .filter((v) => v !== "no_proxy" && v !== "NO_PROXY")
+    .map((v) => process.env[v.trim()]),
+);
+const agent = await runAgent(
   [
     "timeout",
     env("AGENT_TIMEOUT"),
     ...AS_BUILDER,
     `--preserve-env=${preserveEnv}`,
     ...env("AGENT_CMD").split(/\s+/).filter(Boolean),
+    "--mode",
+    "json",
     "--max-cost",
     env("AGENT_MAX_COST"),
     "--model",
     env("AGENT_MODEL"),
     prompt,
   ],
-  { cwd: PKG_DIR, logFile: `${REPO}/agent.log` },
+  { cwd: PKG_DIR, logFile: `${REPO}/agent.log`, redact },
 );
-console.log(`Agent exited with code ${agentExitCode}`);
+const agentExitCode = agent.exitCode;
+console.log(
+  `Agent exited with code ${agentExitCode}` +
+    (agent.cost ? `, reported cost $${agent.cost.toFixed(4)}` : ""),
+);
 
 // ---- Guard rails -------------------------------------------------------------
 // Agent committed despite the rules: undo the commits, keep the changes
@@ -179,9 +206,9 @@ const outcome = { violations, buildOk };
 const title = mrTitle(PKG, fullVersion, outcome);
 const description = mrDescription({
   ...outcome,
-  summary: fs.readFileSync(summaryFile, "utf8"),
+  summary: redact(fs.readFileSync(summaryFile, "utf8")),
   notes,
-  namcap,
+  namcap: redact(namcap),
   agentExitCode,
   jobUrl: env("CI_JOB_URL"),
 });

@@ -26,7 +26,8 @@
 #    OMP_MODELS_YML     File-type variable: an OMP models.yml, copied to
 #                       ~builder/.omp/agent/models.yml (custom / OpenAI-compatible
 #                       providers, e.g. OpenRouter or a model server on your LAN)
-#    OMP_CONFIG_YML     File-type variable: an OMP config.yml (model roles etc.)
+#    OMP_CONFIG_YML     File-type variable: replaces ci/omp-config.yml (command
+#                       restrictions) as the agent's OMP config.yml
 #
 #  Required in the repo:
 #    nvchecker.toml     [__config__]
@@ -82,8 +83,11 @@ variables:
   # already in flight can finish past it
   AGENT_MAX_COST: "0.1"
   # --auto-approve: no one is there to answer tool prompts in CI
-  # --model and --max-cost are appended from the two variables above
-  AGENT_CMD: "omp -p --auto-approve --no-session --max-time 80m"
+  # --tools: only what a PKGBUILD update needs (no eval/browser/sub-agents;
+  # wait collects long commands that omp moves to the background);
+  # command-level rules are in ci/omp-config.yml
+  # --model, --max-cost and --mode json are appended by ci/update.ts
+  AGENT_CMD: "omp -p --auto-approve --no-session --max-time 80m --tools read,bash,edit,write,grep,glob,todo,wait,web_search"
   AGENT_ENV: "OPENROUTER_API_KEY" # comma-separated env vars the agent needs
   AGENT_TIMEOUT: "90m" # hard kill, a little above --max-time
   MAX_UPDATES: "1" # cap agent jobs per pipeline run

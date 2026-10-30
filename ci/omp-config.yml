@@ -1,0 +1,39 @@
+# omp config for the CI agent, copied to ~builder/.omp/agent/config.yml by
+# ci/update.ts (an OMP_CONFIG_YML file variable replaces it entirely).
+#
+# The deny rules are a speed bump, not a sandbox: '*' is the only wildcard and
+# a determined agent can find another spelling. They target behaviour, not
+# languages: the agent once wrote its own Python downloader and ran it in the
+# background. Inline checks (python3 -c, node -e, ...) stay allowed for
+# investigating build failures, and nothing here affects what makepkg runs.
+# The hard checks are the CI guard rails and the clean rebuild in ci/update.ts.
+bash:
+  # Refuse git commands that throw away or move work (reset --hard, stash, ...)
+  gitGuard: true
+  # First match wins; the agent sees "Blocked by bash pattern: <match>".
+  # Compound commands (a && b) are checked part by part.
+  patterns:
+    # Running script files or stdin scripts of its own
+    - { match: "python* *.py*", approval: deny }
+    - { match: "python* - *", approval: deny }
+    - { match: "bash *.sh*", approval: deny }
+    - { match: "sh *.sh*", approval: deny }
+    - { match: "./*.sh*", approval: deny }
+    - { match: "bash -s*", approval: deny }
+    - { match: "sh -s*", approval: deny }
+    - { match: "node *.js*", approval: deny }
+    - { match: "node *.mjs*", approval: deny }
+    - { match: "node *.cjs*", approval: deny }
+    - { match: "bun *.ts*", approval: deny }
+    - { match: "bun *.js*", approval: deny }
+    - { match: "perl *.pl*", approval: deny }
+    - { match: "ruby *.rb*", approval: deny }
+    # Downloads: only makepkg / updpkgsums fetch sources
+    - { match: "curl *", approval: deny }
+    - { match: "wget *", approval: deny }
+    - { match: "aria2c*", approval: deny }
+    # Detached processes that outlive the command
+    - { match: "nohup *", approval: deny }
+    - { match: "setsid *", approval: deny }
+    - { match: "disown*", approval: deny }
+    - { match: "* &", approval: deny }
