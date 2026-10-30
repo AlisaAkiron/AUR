@@ -94,7 +94,7 @@ variables:
 
   # ---- Merge requests -------------------------------------------------------
   BOT_NAME: "pkgbuild-bot"
-  BOT_EMAIL: "pkgbuild-bot@git.alisaqaq.moe"
+  BOT_EMAIL: "pkgbuild@git.alisaqaq.moe"
   MR_LABELS: "pkg-update,bot"
   MR_ASSIGNEE: "alisa" # username new MRs are assigned to; empty = nobody
   # Full history: the aur/<pkg> branches are compared against the default branch
