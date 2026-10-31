@@ -49,7 +49,7 @@
 </tr>
 <tr>
 <td><a href="skills-manager-cli-bin/">skills-manager-cli-bin</a></td>
-<td><code>1.43.1-1</code></td>
+<td><code>1.43.2-1</code></td>
 <td>Command-line interface for Skills Manager, to manage AI agent skills across coding tools</td>
 <td>x86_64, aarch64</td>
 <td><a href="https://github.com/xingkongliang/skills-manager">https://github.com/xingkongliang/skills-manager</a></td>

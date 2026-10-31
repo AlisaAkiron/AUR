@@ -1,6 +1,6 @@
 pkgbase = skills-manager-cli-bin
 	pkgdesc = Command-line interface for Skills Manager, to manage AI agent skills across coding tools
-	pkgver = 1.43.1
+	pkgver = 1.43.2
 	pkgrel = 1
 	url = https://github.com/xingkongliang/skills-manager
 	arch = x86_64
@@ -10,15 +10,15 @@ pkgbase = skills-manager-cli-bin
 	depends = libgcc
 	depends = xz
 	depends = zlib
-	provides = skills-manager-cli=1.43.1
+	provides = skills-manager-cli=1.43.2
 	conflicts = skills-manager-cli
 	options = !strip
 	options = !debug
-	source = LICENSE-1.43.1.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v1.43.1/LICENSE
+	source = LICENSE-1.43.2.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v1.43.2/LICENSE
 	sha256sums = 85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d
-	source_x86_64 = skills-manager-cli-1.43.1-x86_64::https://github.com/xingkongliang/skills-manager/releases/download/v1.43.1/skills-manager-cli-Linux-x64
-	sha256sums_x86_64 = f78936d41ef7865090b29dedace84b43d8fe229a366d611bbc5f7136b3f15171
-	source_aarch64 = skills-manager-cli-1.43.1-aarch64::https://github.com/xingkongliang/skills-manager/releases/download/v1.43.1/skills-manager-cli-Linux-arm64
-	sha256sums_aarch64 = 26215d9494851165ffbaba8bc01d70f59859ae93eaa2cee7b2567736d9937177
+	source_x86_64 = skills-manager-cli-1.43.2-x86_64::https://github.com/xingkongliang/skills-manager/releases/download/v1.43.2/skills-manager-cli-Linux-x64
+	sha256sums_x86_64 = 41de3daff0137f1744dd4f86e48dcb6b0727d2b6f492dce7ba2221fe1149e15c
+	source_aarch64 = skills-manager-cli-1.43.2-aarch64::https://github.com/xingkongliang/skills-manager/releases/download/v1.43.2/skills-manager-cli-Linux-arm64
+	sha256sums_aarch64 = d94323a1e7462a1c2ef8f9a93ff41b30b4ae3974bd2a3ec166128d2fb0745d63
 
 pkgname = skills-manager-cli-bin
