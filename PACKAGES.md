@@ -41,7 +41,7 @@
 </tr>
 <tr>
 <td><a href="skills-manager-appimage-bin/">skills-manager-appimage-bin</a></td>
-<td><code>1.43.1-1</code></td>
+<td><code>1.43.2-1</code></td>
 <td>A lightweight desktop app to manage, sync, and organize AI agent skills across coding tools (AppImage)</td>
 <td>x86_64, aarch64</td>
 <td><a href="https://skillsmanager.dev">https://skillsmanager.dev</a></td>
