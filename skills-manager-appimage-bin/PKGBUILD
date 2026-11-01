@@ -2,7 +2,7 @@
 
 pkgname=skills-manager-appimage-bin
 _pkgname=skills-manager
-pkgver=1.43.1
+pkgver=1.43.2
 pkgrel=1
 pkgdesc="A lightweight desktop app to manage, sync, and organize AI agent skills across coding tools (AppImage)"
 arch=('x86_64' 'aarch64')
@@ -44,8 +44,8 @@ source_x86_64=("$_pkgname-$pkgver-x86_64.AppImage::$_ghurl/releases/download/v$p
 source_aarch64=("$_pkgname-$pkgver-aarch64.AppImage::$_ghurl/releases/download/v$pkgver/${_pkgname}_${pkgver}_aarch64.AppImage")
 noextract=("$_pkgname-$pkgver-x86_64.AppImage" "$_pkgname-$pkgver-aarch64.AppImage")
 sha256sums=('85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d')
-sha256sums_x86_64=('c6e550c16772aa784a1f12193bc0ea078e3f6a2065e7b76dfdc022b2fddf8be1')
-sha256sums_aarch64=('7eb538b018f4899a4cb667badcb216a26849cad7883a44160494519f4be05ad5')
+sha256sums_x86_64=('78b438370f3d772d6a11764f1c5098d6f37d8318871e0921020bdf96b22c9d5d')
+sha256sums_aarch64=('f67ea3618c955f87cdd5617ad753cbe04cdf113f6363fbf2ccdc9d9c8c9cff12')
 
 prepare() {
   chmod +x "$_pkgname-$pkgver-$CARCH.AppImage"
