@@ -17,7 +17,7 @@
 </tr>
 <tr>
 <td><a href="godot-launcher-bin/">godot-launcher-bin</a></td>
-<td><code>1.13.1-1</code></td>
+<td><code>1.14.0-1</code></td>
 <td>A streamlined, open-source tool designed to simplify and accelerate your Godot game development workflow.</td>
 <td>aarch64, x86_64</td>
 <td><a href="https://godotlauncher.org/">https://godotlauncher.org/</a></td>
