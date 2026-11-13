@@ -1,6 +1,6 @@
 pkgbase = skills-manager-appimage-bin
 	pkgdesc = A lightweight desktop app to manage, sync, and organize AI agent skills across coding tools (AppImage)
-	pkgver = 1.43.3
+	pkgver = 1.44.0
 	pkgrel = 1
 	url = https://skillsmanager.dev
 	arch = x86_64
@@ -27,17 +27,17 @@ pkgbase = skills-manager-appimage-bin
 	depends = mesa
 	depends = xz
 	depends = zlib
-	provides = skills-manager=1.43.3
+	provides = skills-manager=1.44.0
 	conflicts = skills-manager
-	noextract = skills-manager-1.43.3-x86_64.AppImage
-	noextract = skills-manager-1.43.3-aarch64.AppImage
+	noextract = skills-manager-1.44.0-x86_64.AppImage
+	noextract = skills-manager-1.44.0-aarch64.AppImage
 	options = !strip
 	options = !debug
-	source = LICENSE-1.43.3.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v1.43.3/LICENSE
+	source = LICENSE-1.44.0.txt::https://raw.githubusercontent.com/xingkongliang/skills-manager/v1.44.0/LICENSE
 	sha256sums = 85296e22a24b1af83b2f8e859052f71999dbdf0d631a1d118004b56c21e2f50d
-	source_x86_64 = skills-manager-1.43.3-x86_64.AppImage::https://github.com/xingkongliang/skills-manager/releases/download/v1.43.3/skills-manager_1.43.3_amd64.AppImage
-	sha256sums_x86_64 = 5c184f487babc8e366818f106d6b4087382e3d567d80522038bd77a47a869d03
-	source_aarch64 = skills-manager-1.43.3-aarch64.AppImage::https://github.com/xingkongliang/skills-manager/releases/download/v1.43.3/skills-manager_1.43.3_aarch64.AppImage
-	sha256sums_aarch64 = 08321989c06eabbaf6a6b1a3177fa324edba2d5cac289bde03775e475ea62ceb
+	source_x86_64 = skills-manager-1.44.0-x86_64.AppImage::https://github.com/xingkongliang/skills-manager/releases/download/v1.44.0/skills-manager_1.44.0_amd64.AppImage
+	sha256sums_x86_64 = 4a2dddb4d67c674c0c4743d36e47837889826d7707498f0674f18b4ef00e68b2
+	source_aarch64 = skills-manager-1.44.0-aarch64.AppImage::https://github.com/xingkongliang/skills-manager/releases/download/v1.44.0/skills-manager_1.44.0_aarch64.AppImage
+	sha256sums_aarch64 = 99f8f562b71461582c76b1dd66363ce333e3158f24a6c36be967e00028ea93ad
 
 pkgname = skills-manager-appimage-bin
